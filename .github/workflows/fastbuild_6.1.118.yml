@@ -542,17 +542,24 @@ jobs:
         run: |
           cd kernel_workspace
           echo "替换内核版本后缀..."
+    
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
             echo "当前内核版本后缀：${{ github.event.inputs.kernel_suffix }}"
+            # 正确的方法：在res变量后追加自定义后缀
             for f in ./common/scripts/setlocalversion; do
-              sed -i "\$s|echo \"\\\$res\"|echo \"-${{ github.event.inputs.kernel_suffix }}\"|" "$f"
+              # 在脚本末尾的echo语句前添加自定义后缀
+              sed -i 's|echo "$res"|echo "$res-'"${{ github.event.inputs.kernel_suffix }}"'"|' "$f"
             done
           else
-            echo "当前内核版本后缀：${{ env.KERNEL_NAME }}"
+            echo "使用默认内核版本后缀：${{ env.KERNEL_NAME }}"
             for f in ./common/scripts/setlocalversion; do
-              sed -i "\$s|echo \"\\\$res\"|echo \"-${{ env.KERNEL_NAME }}\"|" "$f"
+              sed -i 's|echo "$res"|echo "$res-'"${{ env.KERNEL_NAME }}"'"|' "$f"
             done
           fi
+    
+          # 验证修改
+          echo "修改后的setlocalversion脚本相关内容："
+          grep -A2 -B2 'echo "$res"' ./common/scripts/setlocalversion || true
            
       - name: 构建内核
         run: |
